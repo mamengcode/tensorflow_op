@@ -34,6 +34,20 @@ public:
 			std::cout << "input_tensor(" << i << ") with shape " << input_tensor.shape() << "\n";
 			// std::cout << "input_tensor(" << i << ") with value " << input_tensor << "\n";
 		}
+
+		// Test inputlist
+		OpInputList list1;
+		context->input_list("to_zero", &list1);
+		std::cout << "list of argument 1 size " << list1.size() << '\n';
+		std::cout << "The shape of tensors in list1 is : ";
+		for(int i = 0; i < list1.size(); ++i) {
+			std::cout << list1[i].shape() << " ";
+		}
+		std::cout << " that's for tensors in list1\n";
+
+		OpInputList list2;
+		context->input_list("to_zero1", &list2);
+		std::cout << "list of argument 2 size " << list2.size() << '\n';
 		// Grab the input tensor
 		// const Tensor& input_tensor = context->input(0);
 		// std::cout << "input_tensor shape is " << input_tensor.shape() << "\n";
