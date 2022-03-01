@@ -21,15 +21,16 @@ zero_out_list_mutable_module = tf.load_op_library('./zero_out_list_mutable.so')
 
 with tf.Graph().as_default():
 	with tf.compat.v1.Session() as sess:
-		a = variables.RefVariable([1,2], dtype=np.float32, name="a", trainable=False)
+		a = variables.RefVariable([1,2], dtype=np.int32, name="a", trainable=False)
 		print(a.dtype._is_ref_dtype)
 
 		tf.compat.v1.global_variables_initializer().run()
 		update = a.assign([2,3])
 		sess.run(update)
 		print("after assignment, a =", a.eval())
-		res = zero_out_list_mutable_module.zero_out_list_mutable(a, 3.0)
+		res = zero_out_list_mutable_module.zero_out_list_mutable(a, 3)
 		print(sess.run([res]))
+		print("after applying op, a =", a.eval())
 
 # print(f"{a=} {b=} {c=} {d=}")
 
