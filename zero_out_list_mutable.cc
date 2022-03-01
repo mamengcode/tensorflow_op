@@ -35,46 +35,49 @@ using GPUDevice = Eigen::GpuDevice;
 //     // })
 //     // ;
 
- REGISTER_OP("ZeroOutListMutable")
-    .Input("ref: Ref(T)")
-    .Input("value: T")
-    .Output("output_ref: T")
-    .Attr("T: numbertype")
-    // .Attr("use_locking: bool = true")
-    .SetShapeFn([](InferenceContext* c) {
+REGISTER_OP("ZeroOutListMutable")
+	.Input("ref: Ref(T)")
+	.Input("value: T")
+	.Output("output_ref: T")
+	.Attr("T: numbertype")
+	// .Attr("use_locking: bool = true")
+	.SetShapeFn([](InferenceContext *c)
+				{
       c->set_output(0, c->input(0));
-      return Status::OK();
-    });
+      return Status::OK(); });
 
-// namespace byted_optimizer { 
+// namespace byted_optimizer {
 // namespace tensorflow {
 
 template <typename Device, typename T>
-class ZeroOutListMutableOp : public OpKernel {
+class ZeroOutListMutableOp : public OpKernel
+{
 private:
 	// bool use_exclusive_lock_;
 
 public:
-	explicit ZeroOutListMutableOp(OpKernelConstruction* context) : OpKernel(context) {
+	explicit ZeroOutListMutableOp(OpKernelConstruction *context) : OpKernel(context)
+	{
 		// OP_REQUIRES_OK(context, context->GetAttr("use_locking", &use_exclusive_lock_));
 		// std::cout << "Total number of input is " << context->num_inputs() << "\n";
 		// context->GetAttr("N", &N_);
 		// std::cout << "get value of N " << N_ << '\n';
 	}
 
-	void Compute(OpKernelContext* context) override {
+	void Compute(OpKernelContext *context) override
+	{
 		int nInputs = context->num_inputs();
 		std::cout << "Total number of input is " << nInputs << "\n";
 
 		Tensor ref = context->mutable_input(0, false);
 		std::cout << "input ref = " << ref.flat<T>() << '\n';
 
-	    const Tensor& val = context->input(1);
-	    std::cout << "val = " << val.scalar<T>() << '\n';
+		const Tensor &val = context->input(1);
+		std::cout << "val = " << val.scalar<T>() << '\n';
 
-	    auto flat_ref = ref.flat<T>();
-	    flat_ref(0) = 5;
-	    std::cout << "after assignment, input ref = " << ref.flat<T>() << '\n';
+		auto flat_ref = ref.flat<T>();
+		flat_ref(0) = 5;
+		std::cout << "after assignment, input ref = " << ref.flat<T>() << '\n';
 
 		// for (int i = 0; i < nInputs; ++i) {
 		// 	const Tensor& input_tensor = context->input(i);
@@ -110,16 +113,16 @@ public:
 		// auto input = input_tensor.flat<int32>();
 
 		// Create an output tensor
-		Tensor* output_tensor = NULL;
+		Tensor *output_tensor = NULL;
 		OP_REQUIRES_OK(context, context->allocate_output(0, ref.shape(),
-		                                                 &output_tensor));
+														 &output_tensor));
 		auto output_flat = output_tensor->flat<T>();
 		output_flat(0) = 155;
 
 		// // Set all but the first element of the output tensor to 0.
 		// const int N = input.size();
 		// for (int i = 1; i < N; i++) {
-	 //  		output_flat(i) = 0;
+		//  		output_flat(i) = 0;
 		// }
 
 		// // Preserve the first input value if possible.
@@ -127,20 +130,18 @@ public:
 	}
 };
 
-
-#define REGISTER_CPU(T)                                          \
-  REGISTER_KERNEL_BUILDER(                                       \
-      Name("ZeroOutListMutable").Device(DEVICE_CPU).TypeConstraint<T>("T"), \
-      ZeroOutListMutableOp<CPUDevice, T>);
+#define REGISTER_CPU(T)                                                       \
+	REGISTER_KERNEL_BUILDER(                                                  \
+		Name("ZeroOutListMutable").Device(DEVICE_CPU).TypeConstraint<T>("T"), \
+		ZeroOutListMutableOp<CPUDevice, T>);
 REGISTER_CPU(float);
 REGISTER_CPU(int32);
 
-
-// #define REGISTER_KERNELS(D, T)                                     \
-//   REGISTER_KERNEL_BUILDER(                                         \
-//       Name("ZeroOutListMutableOp").Device(DEVICE_##D).TypeConstraint<T>("T"), \
-//       ZeroOutListMutableOp<D##Device, T>);
-//                                   //\
+// #define REGISTER_KERNELS(D, T)                                                  \
+// 	REGISTER_KERNEL_BUILDER(                                                    \
+// 		Name("ZeroOutListMutableOp").Device(DEVICE_##D).TypeConstraint<T>("T"), \
+// 		ZeroOutListMutableOp<D##Device, T>);
+// //\
 //   // REGISTER_KERNEL_BUILDER(Name("ResourceZeroOutListMutableOp")                \
 //   //                             .Device(DEVICE_##D)                  \
 //   //                             .TypeConstraint<T>("T"),             \
@@ -154,9 +155,9 @@ REGISTER_CPU(int32);
 // TF_CALL_float(REGISTER_CPU_KERNELS);
 // TF_CALL_double(REGISTER_CPU_KERNELS);
 
-
-// REGISTER_KERNEL_BUILDER(Name("ZeroOutListMutableOp") 	\
-// 						.Device(DEVICE_CPU)  			\
-// 						.TypeConstraint<T>("T"), ZeroOutListMutableOp);
-// }  // namespace tensorflow
-// }  // namespace byted_optimizer
+// REGISTER_KERNEL_BUILDER(Name("ZeroOutListMutableOp")
+// 							.Device(DEVICE_CPU)
+// 							.TypeConstraint<T>("T"),
+// 						ZeroOutListMutableOp);
+// } // namespace tensorflow
+// } // namespace byted_optimizer
