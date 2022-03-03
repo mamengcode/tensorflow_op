@@ -3,6 +3,9 @@ import numpy as np
 from tensorflow.python.ops import variables
 
 tf.compat.v1.disable_eager_execution()
+tf.compat.v1.enable_resource_variables()
+
+import tensorflow.compat.v1 as tf1
 
 # zero_out_module = tf.load_op_library('./zero_out.so')
 # a = [1,2]
@@ -21,16 +24,21 @@ zero_out_list_mutable_module = tf.load_op_library('./zero_out_list_mutable.so')
 
 with tf.Graph().as_default():
 	with tf.compat.v1.Session() as sess:
-		a = variables.RefVariable([1,2], dtype=np.int32, name="a", trainable=False)
-		print(a.dtype._is_ref_dtype)
+		a = tf1.Variable([1,2], dtype=tf.float32, name="a", trainable=True, use_resource=True)
+		b = tf1.Variable([3,4], dtype=tf.float32, name="a", trainable=True, use_resource=True)
+		# aref = a.ref()
+		# print(a.dtype._is_ref_dtype)
+		print(f"type of a is {type(a)}")
+
+		# ll = [variables.RefVariable(a), variables.RefVariable(b)]
 
 		tf.compat.v1.global_variables_initializer().run()
 		update = a.assign([2,3])
 		sess.run(update)
 		print("after assignment, a =", a.eval())
-		res = zero_out_list_mutable_module.zero_out_list_mutable(a, 3)
+		res = zero_out_list_mutable_module.zero_out_list_mutable([a.handle, b.handle], 3.0)
 		print(sess.run([res]))
-		print("after applying op, a =", a.eval())
+		print("after applying op, a =", a.eval(), "b =", b.eval())
 
 # print(f"{a=} {b=} {c=} {d=}")
 

@@ -1,5 +1,6 @@
 // #include "tensorflow/core/framework/op.h"
 // #include "tensorflow/core/framework/shape_inference.h"
+#define EIGEN_USE_THREADS
 
 #include "tensorflow/core/framework/common_shape_fns.h"
 #include "tensorflow/core/framework/op_kernel.h"
@@ -11,6 +12,8 @@
 #include <tensorflow/core/kernels/variable_ops.h>
 #include <tensorflow/core/lib/core/refcount.h>
 #include <tensorflow/core/util/ptr_util.h>
+
+#include "training_op_helpers.h"
 
 #include <iostream>
 
@@ -36,32 +39,34 @@ using GPUDevice = Eigen::GpuDevice;
 //     // ;
 
 REGISTER_OP("ZeroOutListMutable")
-	.Input("ref: Ref(T)")
+	.Input("ref: N * resource")
 	.Input("value: T")
 	.Output("output_ref: T")
 	.Attr("T: numbertype")
+	.Attr("N: int >= 1")
 	// .Attr("use_locking: bool = true")
 	.SetShapeFn([](InferenceContext *c)
 				{
       c->set_output(0, c->input(0));
       return Status::OK(); });
 
-// namespace byted_optimizer {
-// namespace tensorflow {
+namespace byted_optimizer {
+namespace tensorflow {
 
 template <typename Device, typename T>
 class ZeroOutListMutableOp : public OpKernel
 {
 private:
 	// bool use_exclusive_lock_;
+	int32_t N_;
 
 public:
 	explicit ZeroOutListMutableOp(OpKernelConstruction *context) : OpKernel(context)
 	{
 		// OP_REQUIRES_OK(context, context->GetAttr("use_locking", &use_exclusive_lock_));
 		// std::cout << "Total number of input is " << context->num_inputs() << "\n";
-		// context->GetAttr("N", &N_);
-		// std::cout << "get value of N " << N_ << '\n';
+		context->GetAttr("N", &N_);
+		std::cout << "get value of N =" << N_ << '\n';
 	}
 
 	void Compute(OpKernelContext *context) override
@@ -69,15 +74,35 @@ public:
 		int nInputs = context->num_inputs();
 		std::cout << "Total number of input is " << nInputs << "\n";
 
-		Tensor ref = context->mutable_input(0, false);
-		std::cout << "input ref = " << ref.flat<T>() << '\n';
+		Tensor weight1, weight2;
+		OP_REQUIRES_OK(context, GetInputTensorFromVariable<Device, T>(
+								context, 0, false, false, &weight1));
+		std::cout << "input ref = " << weight1.flat<T>() << '\n';
+		auto wf = weight1.flat<T>();
+		wf(0) = 0;
 
-		const Tensor &val = context->input(1);
-		std::cout << "val = " << val.scalar<T>() << '\n';
+		OP_REQUIRES_OK(context, GetInputTensorFromVariable<Device, T>(
+								context, 1, false, false, &weight2));
+		std::cout << "input ref = " << weight2.flat<T>() << '\n';
+		auto wf2 = weight2.flat<T>();
+		wf2(0) = 0;
 
-		auto flat_ref = ref.flat<T>();
-		flat_ref(0) = 5;
-		std::cout << "after assignment, input ref = " << ref.flat<T>() << '\n';
+		// Tensor ref;
+		// for(int i = 0; i < N_; ++i) 
+		// {
+			// ref = context->mutable_input(0, false);
+			// std::cout << "input ref = " << ref.flat<T>() << '\n';
+		// 	auto ref_flat = ref.flat<T>();
+		// 	ref_flat(0) = 0;
+		// 	std::cout << "after assignment, input ref =" << ref_flat << '\n';
+		// }
+
+		// const Tensor &val = context->input(1);
+		// std::cout << "val = " << val.scalar<T>() << '\n';
+
+		// auto flat_ref = ref.flat<T>();
+		// flat_ref(0) = 5;
+		// std::cout << "after assignment, input ref = " << ref.flat<T>() << '\n';
 
 		// for (int i = 0; i < nInputs; ++i) {
 		// 	const Tensor& input_tensor = context->input(i);
@@ -114,7 +139,7 @@ public:
 
 		// Create an output tensor
 		Tensor *output_tensor = NULL;
-		OP_REQUIRES_OK(context, context->allocate_output(0, ref.shape(),
+		OP_REQUIRES_OK(context, context->allocate_output(0, weight1.shape(),
 														 &output_tensor));
 		auto output_flat = output_tensor->flat<T>();
 		output_flat(0) = 155;
@@ -159,5 +184,5 @@ REGISTER_CPU(int32);
 // 							.Device(DEVICE_CPU)
 // 							.TypeConstraint<T>("T"),
 // 						ZeroOutListMutableOp);
-// } // namespace tensorflow
-// } // namespace byted_optimizer
+} // namespace tensorflow
+} // namespace byted_optimizer
