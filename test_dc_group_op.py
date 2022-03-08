@@ -34,10 +34,20 @@ with tf.compat.v1.Session() as sess:
 
     tf.compat.v1.global_variables_initializer().run()
 
-    # print(f"before DC OP, weight = {weight.eval()}, prev_weight = {prev_weight.eval()}")
+    prev_weight_val = sess.run(prev_weight)
+    weight_val = sess.run(weight)
+    grad_val = sess.run(grad)
+    print('\n\n')
+    print(f"Before DC OP\n\tweight \t\t= {weight_val}\n\tprev_weight \t= {prev_weight_val}")
+    print(f"\tgrad \t\t=", grad_val)
+
     res = dc_module.delay_compensation_group(grad, [x.handle for x in prev_weight], weight, 0.5)
-    print(sess.run([res]))
-    # print(f"after DC OP, weight = {weight.eval()}, prev_weight = {prev_weight.eval()}")
+
+    updated_grad = sess.run(res)
+    prev_weight_val = sess.run(prev_weight)
+    weight_val = sess.run(weight)
+    print(f"After DC OP\n\tweight \t\t= {weight_val}\n\tprev_weight \t= {prev_weight_val}")
+    print("\tupdated_grad \t=", updated_grad)
     # print("after applying op, a =", a.eval(), "b =", b.eval())
 
 # print(f"{a=} {b=} {c=} {d=}")
