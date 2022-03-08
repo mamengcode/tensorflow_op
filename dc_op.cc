@@ -146,12 +146,13 @@ public:
 		// std::cout << "num of elements of dc_lambda is " << dc_lambda.NumElements() << '\n';
 
 		// Create an output tensor
-		Tensor *output0, *output1;
-		OP_REQUIRES_OK(context, context->allocate_output(0, grad0.shape(), &output0));
-		OP_REQUIRES_OK(context, context->allocate_output(1, grad0.shape(), &output1));
-		auto out = output0->flat<T>();
-		for (int j = 0; j < grad0.NumElements(); ++j){
-			out(j) = j;
+		Tensor *output[nOutputs];
+		for (int i = 0; i < nOutputs; ++i){
+			OP_REQUIRES_OK(context, context->allocate_output(i, grad0.shape(), &output[i]));
+			auto out = output[i]->flat<T>();
+			for (int j = 0; j < grad0.NumElements(); ++j){
+				out(j) = j + i * 10;
+			}
 		}
 		// auto output_flat = updated_grad->flat<T>();
 		// auto pp_flat = prev_weight.flat<T>();
