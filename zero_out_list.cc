@@ -10,6 +10,7 @@ using namespace tensorflow;
 REGISTER_OP("ZeroOutList")
 	.Attr("T: list({int32})")
     .Input("to_zero: T")
+    .Input("to_zero1: T")
     .Output("zeroed: int32")
     // .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
     //   c->set_output(0, c->input(0));
@@ -25,22 +26,44 @@ public:
 	}
 
 	void Compute(OpKernelContext* context) override {
-		std::cout << "Total number of input is " << context->num_inputs() << "\n";
-		// Grab the input tensor
-		const Tensor& input_tensor = context->input(0);
-		std::cout << "input_tensor shape is " << input_tensor.shape() << "\n";
-		auto input = input_tensor.flat<int32>();
-		std::cout << "flat input is " << input << "\n";
+		int nInputs = context->num_inputs();
+		std::cout << "Total number of input is " << nInputs << "\n";
 
-		const Tensor& input_tensor1 = context->input(1);
-		std::cout << "input_tensor1 shape is " << input_tensor1.shape() << "\n";
+		for (int i = 0; i < nInputs; ++i) {
+			const Tensor& input_tensor = context->input(i);
+			std::cout << "input_tensor(" << i << ") with shape " << input_tensor.shape() << "\n";
+			// std::cout << "input_tensor(" << i << ") with value " << input_tensor << "\n";
+		}
+
+		// Test inputlist
+		OpInputList list1;
+		context->input_list("to_zero", &list1);
+		std::cout << "list of argument 1 size " << list1.size() << '\n';
+		std::cout << "The shape of tensors in list1 is : ";
+		for(int i = 0; i < list1.size(); ++i) {
+			std::cout << list1[i].shape() << " ";
+		}
+		std::cout << " that's for tensors in list1\n";
+
+		OpInputList list2;
+		context->input_list("to_zero1", &list2);
+		std::cout << "list of argument 2 size " << list2.size() << '\n';
+		// Grab the input tensor
+		// const Tensor& input_tensor = context->input(0);
+		// std::cout << "input_tensor shape is " << input_tensor.shape() << "\n";
+		// auto input = input_tensor.flat<int32>();
+		// std::cout << "flat input is " << input << "\n";
+
+		// const Tensor& input_tensor1 = context->input(1);
+		// std::cout << "input_tensor1 shape is " << input_tensor1.shape() << "\n";
 		// auto input = input_tensor.flat<int32>();
 
 		// Create an output tensor
 		Tensor* output_tensor = NULL;
-		OP_REQUIRES_OK(context, context->allocate_output(0, input_tensor.shape(),
+		OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape(),
 		                                                 &output_tensor));
-		// auto output_flat = output_tensor->flat<int32>();
+		auto output_flat = output_tensor->flat<int32>();
+		output_flat(0) = 155;
 
 		// // Set all but the first element of the output tensor to 0.
 		// const int N = input.size();
